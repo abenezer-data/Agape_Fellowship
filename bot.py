@@ -1,13 +1,19 @@
 import json
 import time
+import os
 import schedule
 from telegram import Update, Bot
 from telegram.ext import CommandHandler, CallbackContext, Updater
 
 # === CONFIGURATION ===
-BOT_TOKEN = '8129362302:AAEm1Moj6gpW9BBH0Fanas0AEv-mxhKwaYE'
+BOT_TOKEN = os.getenv("BOT_TOKEN")  
 VERSE_FILE = 'verses.json'
 USER_FILE = 'users.txt'
+
+# Ensure token is available
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable not set!")
+
 bot = Bot(token=BOT_TOKEN)
 
 # === Load verses from JSON ===
@@ -34,12 +40,16 @@ def save_user(user_id):
 def start(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     save_user(user_id)
-    context.bot.send_message(chat_id=user_id, text="✅ You've subscribed to Daily Bible Verses!")
+    context.bot.send_message(chat_id=user_id, text="🙏 Welcome to Agape Fellowship! ✨")
 
 # === Send verse to users ===
 def send_daily_verse():
     verses = load_verses()
     users = load_users()
+    if not verses:
+        print(" No verses found in JSON file.")
+        return
+
     verse = verses[int(time.time()) % len(verses)]  # Rotate through verses
 
     for user_id in users:
@@ -56,10 +66,10 @@ def main():
 
     updater.start_polling()
 
-    # Schedule daily message
+    # Schedule daily verse
     schedule.every().day.at("08:00").do(send_daily_verse)
 
-    print("Bot is running...")
+    print("✅ Bot is running...")
 
     while True:
         schedule.run_pending()
